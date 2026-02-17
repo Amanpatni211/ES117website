@@ -253,7 +253,6 @@ function renderCountdown() {
         const days = Math.floor(diff / (1000 * 60 * 60 * 24));
         const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
         const mins = Math.floor((diff / (1000 * 60)) % 60);
-        const secs = Math.floor((diff / 1000) % 60);
         el.innerHTML = `
           <div class="countdown animate-in">
             <div class="countdown__label">⏳ Countdown to Demo Day</div>
@@ -272,16 +271,11 @@ function renderCountdown() {
                 <span class="countdown__number">${String(mins).padStart(2, '0')}</span>
                 <span class="countdown__name">mins</span>
               </div>
-              <div class="countdown__sep">:</div>
-              <div class="countdown__unit">
-                <span class="countdown__number">${String(secs).padStart(2, '0')}</span>
-                <span class="countdown__name">secs</span>
-              </div>
             </div>
           </div>`;
     }
     update();
-    setInterval(update, 1000);
+    setInterval(update, 60000);
 }
 
 // ============================================================
