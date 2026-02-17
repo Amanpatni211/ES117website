@@ -16,3 +16,9 @@ Thumbs.db
 
 # Node (if ever needed)
 node_modules/
+
+# Backend
+backend/.env
+backend/*.db
+backend/.venv/
+backend/.python-version
