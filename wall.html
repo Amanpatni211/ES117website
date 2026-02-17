@@ -4,8 +4,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Team Detail — ES117 World of Engineering</title>
-    <meta name="description" content="Team progress and updates — ES117 World of Engineering, IIT Gandhinagar">
+    <title>Shoutout Wall — ES117 World of Engineering</title>
+    <meta name="description"
+        content="Anonymous encouragements and shoutouts between ES117 engineering teams at IIT Gandhinagar">
     <link rel="stylesheet" href="css/style.css">
     <link rel="icon"
         href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚙️</text></svg>">
@@ -23,7 +24,7 @@
             <ul class="nav__links" id="nav-links">
                 <li><a href="index.html" class="nav__link">Teams</a></li>
                 <li><a href="gallery.html" class="nav__link">Gallery</a></li>
-                <li><a href="wall.html" class="nav__link">Wall 💬</a></li>
+                <li><a href="wall.html" class="nav__link nav__link--active">Wall 💬</a></li>
                 <li><a href="https://classroom.google.com" target="_blank" class="nav__link">Classroom ↗</a></li>
                 <li><button id="theme-toggle" class="nav__theme-toggle" aria-label="Toggle dark mode">🌙</button></li>
             </ul>
@@ -31,12 +32,22 @@
         </div>
     </nav>
 
-    <main id="team-content">
-        <div class="container" style="padding-top:48px;">
-            <div class="loading">
-                <div class="loading__spinner"></div>
+    <main>
+        <section class="hero container" style="padding-bottom:24px;">
+            <h1 class="hero__title"><em>Shoutout Wall</em></h1>
+            <p class="hero__subtitle">
+                Anonymous encouragements, hype, and love between teams. Refreshed on every visit! 🔀
+            </p>
+            <div class="hero__divider"></div>
+        </section>
+
+        <section class="container">
+            <div class="shoutout-grid" id="shoutout-grid">
+                <div class="loading">
+                    <div class="loading__spinner"></div>
+                </div>
             </div>
-        </div>
+        </section>
     </main>
 
     <footer class="footer">
@@ -46,7 +57,7 @@
     </footer>
 
     <script src="js/app.js"></script>
-    <script>document.addEventListener('DOMContentLoaded', initTeamPage);</script>
+    <script>document.addEventListener('DOMContentLoaded', initWallPage);</script>
 </body>
 
 </html>
