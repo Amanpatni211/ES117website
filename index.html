@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ES117 — World of Engineering | IIT Gandhinagar</title>
+    <meta name="description"
+        content="Track the progress of engineering teams building real-world prototypes at IIT Gandhinagar. ES117: World of Engineering.">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚙️</text></svg>">
+</head>
+
+<body>
+    <div class="bg-pattern"></div>
+
+    <!-- Navigation -->
+    <nav class="nav">
+        <div class="container nav__inner">
+            <a href="index.html" class="nav__brand">
+                <div class="nav__brand-icon">⚙️</div>
+                <span>ES 117</span>
+            </a>
+            <ul class="nav__links" id="nav-links">
+                <li><a href="index.html" class="nav__link nav__link--active">Teams</a></li>
+                <li><a href="gallery.html" class="nav__link">Gallery</a></li>
+                <li><a href="https://classroom.google.com" target="_blank" class="nav__link">Classroom ↗</a></li>
+            </ul>
+            <button class="nav__mobile-toggle" onclick="toggleMobileNav()" aria-label="Menu">☰</button>
+        </div>
+    </nav>
+
+    <main>
+        <!-- Hero -->
+        <section class="hero container">
+            <div class="hero__eyebrow">
+                <span class="hero__eyebrow-dot"></span>
+                IIT Gandhinagar · Spring 2026
+            </div>
+            <h1 class="hero__title">
+                <em>World of Engineering</em>
+            </h1>
+            <p class="hero__subtitle">
+                From ideation to prototype — follow <strong id="team-count">13</strong> teams as they engineer solutions
+                to real-world problems.
+            </p>
+            <div class="hero__divider"></div>
+        </section>
+
+        <!-- Stats -->
+        <section class="container">
+            <div class="stats" id="stats">
+                <div class="loading">
+                    <div class="loading__spinner"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Phase Timeline -->
+        <section class="container phase-section">
+            <div class="phase-section__header">
+                <div class="phase-section__title">Course Timeline</div>
+            </div>
+            <div class="phases" id="phase-timeline">
+                <div class="loading">
+                    <div class="loading__spinner"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Teams -->
+        <section class="container">
+            <div class="section-header">
+                <h2 class="section-title">Team <span>Projects</span></h2>
+                <div class="filter-bar">
+                    <button class="filter-btn filter-btn--active" data-filter="all">All</button>
+                    <button class="filter-btn" data-filter="hardware">Hardware</button>
+                    <button class="filter-btn" data-filter="software">Software</button>
+                </div>
+            </div>
+            <div class="teams-grid" id="teams-grid">
+                <div class="loading">
+                    <div class="loading__spinner"></div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>ES 117: World of Engineering — <a href="https://iitgn.ac.in" target="_blank">IIT Gandhinagar</a></p>
+            <p class="footer__profs">Prof. Udit Bhatia (CE & CSE) · Prof. Himanshu Shekhar (EE)</p>
+        </div>
+    </footer>
+
+    <script src="js/app.js"></script>
+    <script>document.addEventListener('DOMContentLoaded', initHomePage);</script>
+</body>
+
+</html>
