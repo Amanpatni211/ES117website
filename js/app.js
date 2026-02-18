@@ -256,6 +256,8 @@ function renderTeamDetail(team, updates = []) {
       ${timelineHtml}
 
       <div id="upvote-container" data-team="${team.id}"></div>
+      <div id="photo-upload-container" data-team="${team.id}"></div>
+      <div id="photo-grid-container" data-team="${team.id}"></div>
       <div id="comments-container" data-team="${team.id}"></div>
     </div>`;
 }
@@ -613,6 +615,194 @@ async function renderComments(teamId) {
   });
 }
 
+// ============================================================
+// FEATURE: Photo Upload + Grid
+// ============================================================
+async function renderPhotoUpload(teamId) {
+  const container = document.getElementById('photo-upload-container');
+  if (!container) return;
+
+  const token = getToken();
+  if (!token) {
+    container.innerHTML = `
+      <div class="photo-upload-section animate-in">
+        <button class="comment-login-btn" onclick="showLoginPrompt('upload photos')">Sign in to upload photos 📸</button>
+      </div>`;
+    return;
+  }
+
+  container.innerHTML = `
+    <div class="photo-upload-section animate-in">
+      <h3 class="photo-upload__title">📸 Upload Team Photo</h3>
+      <form id="photo-upload-form" class="photo-upload-form">
+        <div class="photo-dropzone" id="photo-dropzone">
+          <span class="photo-dropzone__icon">📷</span>
+          <span class="photo-dropzone__text">Drag & drop or click to select</span>
+          <span class="photo-dropzone__hint">JPEG, PNG, WebP — max 1 MB</span>
+          <input type="file" id="photo-file-input" accept="image/jpeg,image/png,image/webp,image/gif" hidden>
+        </div>
+        <input type="text" id="photo-caption" class="comment-form__input" placeholder="Caption (optional)" maxlength="200" style="margin-top:10px;">
+        <button type="submit" class="comment-form__btn" style="margin-top:10px;" id="photo-submit-btn" disabled>Upload</button>
+      </form>
+    </div>`;
+
+  const dropzone = document.getElementById('photo-dropzone');
+  const fileInput = document.getElementById('photo-file-input');
+  const submitBtn = document.getElementById('photo-submit-btn');
+  let selectedFile = null;
+
+  dropzone.addEventListener('click', () => fileInput.click());
+  dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('photo-dropzone--active'); });
+  dropzone.addEventListener('dragleave', () => dropzone.classList.remove('photo-dropzone--active'));
+  dropzone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropzone.classList.remove('photo-dropzone--active');
+    if (e.dataTransfer.files.length) { selectedFile = e.dataTransfer.files[0]; showSelectedFile(); }
+  });
+  fileInput.addEventListener('change', () => { if (fileInput.files.length) { selectedFile = fileInput.files[0]; showSelectedFile(); } });
+
+  function showSelectedFile() {
+    if (!selectedFile) return;
+    if (selectedFile.size > 1024 * 1024) { showToast('File too large — max 1 MB'); selectedFile = null; return; }
+    dropzone.querySelector('.photo-dropzone__text').textContent = selectedFile.name;
+    dropzone.querySelector('.photo-dropzone__icon').textContent = '✅';
+    submitBtn.disabled = false;
+  }
+
+  document.getElementById('photo-upload-form').addEventListener('submit', async e => {
+    e.preventDefault();
+    if (!selectedFile) return;
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Uploading...';
+
+    const formData = new FormData();
+    formData.append('file', selectedFile);
+    formData.append('caption', document.getElementById('photo-caption').value);
+
+    try {
+      const token = getToken();
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 15000); // 15s for upload
+      const res = await fetch(`${API_BASE}/api/teams/${teamId}/photos`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'ngrok-skip-browser-warning': '1' },
+        body: formData,
+        signal: controller.signal,
+      });
+      clearTimeout(timeout);
+      if (res.ok) {
+        showToast('Photo uploaded! 📸');
+        renderPhotoUpload(teamId);
+        renderTeamPhotos(teamId);
+      } else {
+        const err = await res.json().catch(() => ({}));
+        showToast(err.detail || 'Upload failed');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Upload';
+      }
+    } catch {
+      showToast('Upload failed — check connection');
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Upload';
+    }
+  });
+}
+
+async function renderTeamPhotos(teamId) {
+  const container = document.getElementById('photo-grid-container');
+  if (!container) return;
+
+  const photos = await apiFetch(`/api/teams/${teamId}/photos`) || [];
+  if (photos.length === 0) {
+    container.innerHTML = '';
+    return;
+  }
+
+  container.innerHTML = `
+    <div class="team-photos-section animate-in">
+      <h3 class="team-photos__title">📷 Team Photos <span class="comments-section__count">${photos.length}</span></h3>
+      <div class="photo-masonry">
+        ${photos.map(p => `
+          <div class="photo-card" onclick="showLightbox('${API_BASE}${p.full_url}', '${escapeHtml(p.caption || '')}')">
+            <img src="${API_BASE}${p.thumb_url}" alt="${escapeHtml(p.caption || 'Team photo')}" loading="lazy" class="photo-card__img">
+            ${p.caption ? `<div class="photo-card__caption">${escapeHtml(p.caption)}</div>` : ''}
+          </div>`).join('')}
+      </div>
+    </div>`;
+}
+
+function showLightbox(src, caption) {
+  const existing = document.getElementById('lightbox');
+  if (existing) existing.remove();
+
+  const overlay = document.createElement('div');
+  overlay.id = 'lightbox';
+  overlay.className = 'lightbox';
+  overlay.innerHTML = `
+    <div class="lightbox__content">
+      <img src="${src}" alt="${caption}" class="lightbox__img">
+      ${caption ? `<p class="lightbox__caption">${caption}</p>` : ''}
+      <button class="lightbox__close" onclick="document.getElementById('lightbox').remove()">✕</button>
+    </div>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e => {
+    if (e.target === overlay) overlay.remove();
+  });
+}
+
+// ============================================================
+// FEATURE: Gallery Page
+// ============================================================
+async function initGalleryPage() {
+  const contentEl = document.getElementById('gallery-content');
+  if (!contentEl) return;
+
+  const photos = await apiFetch('/api/photos/all') || [];
+  if (photos.length === 0) {
+    contentEl.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-state__icon">📷</div>
+        <h2 style="margin-bottom:8px;font-family:'Playfair Display',serif;">No photos yet</h2>
+        <p style="max-width:420px;margin:0 auto;color:var(--text-secondary);">Team photos will appear here as teams upload their weekly updates.</p>
+      </div>`;
+    return;
+  }
+
+  // Get unique team IDs for filter
+  const teamIds = [...new Set(photos.map(p => p.team_id))].sort();
+
+  contentEl.innerHTML = `
+    <div class="gallery-filters">
+      <button class="filter-btn filter-btn--active" data-filter="all">All</button>
+      ${teamIds.map(id => `<button class="filter-btn" data-filter="${id}">${id}</button>`).join('')}
+    </div>
+    <div class="photo-masonry photo-masonry--gallery" id="gallery-grid">
+      ${renderGalleryCards(photos)}
+    </div>`;
+
+  // Filter buttons
+  contentEl.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      contentEl.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('filter-btn--active'));
+      btn.classList.add('filter-btn--active');
+      const filter = btn.dataset.filter;
+      const filtered = filter === 'all' ? photos : photos.filter(p => p.team_id === filter);
+      document.getElementById('gallery-grid').innerHTML = renderGalleryCards(filtered);
+    });
+  });
+}
+
+function renderGalleryCards(photos) {
+  return photos.map(p => `
+    <div class="photo-card photo-card--gallery animate-in" onclick="showLightbox('${API_BASE}${p.full_url}', '${escapeHtml(p.caption || '')}')">
+      <img src="${API_BASE}${p.thumb_url}" alt="${escapeHtml(p.caption || 'Team photo')}" loading="lazy" class="photo-card__img">
+      <div class="photo-card__overlay">
+        <span class="photo-card__team">${p.team_id}</span>
+        ${p.caption ? `<span class="photo-card__caption">${escapeHtml(p.caption)}</span>` : ''}
+      </div>
+    </div>`).join('');
+}
+
 
 // FEATURE: Shoutout Wall
 // ============================================================
@@ -632,13 +822,18 @@ function renderShoutoutCard(shout, index) {
 
 function renderShoutoutForm() {
   const token = getToken();
-  if (!token || !API_BASE) return '';
-  return `
+  if (token && API_BASE) {
+    return `
       <form id="shoutout-form" class="shoutout-form">
         <input type="text" id="shoutout-input" class="shoutout-form__input"
                placeholder="Write an encouraging shoutout..." maxlength="500" required />
         <button type="submit" class="shoutout-form__btn">Post 💬</button>
       </form>`;
+  }
+  if (API_BASE) {
+    return `<button class="comment-login-btn" onclick="showLoginPrompt('post a shoutout')">Sign in to post a shoutout 💬</button>`;
+  }
+  return '';
 }
 
 async function initWallPage() {
@@ -841,6 +1036,8 @@ async function initTeamPage() {
 
   // Load interactive features
   renderUpvoteButton(team.id);
+  renderPhotoUpload(team.id);
+  renderTeamPhotos(team.id);
   renderComments(team.id);
 }
 
