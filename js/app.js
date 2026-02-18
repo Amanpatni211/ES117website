@@ -1042,7 +1042,22 @@ async function initTeamPage() {
 }
 
 // --- Global Init (runs on all pages) ---
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+  // 🚨 EMERGENCY KILL SWITCH — check site-config.json first
+  try {
+    const cfg = await fetch('site-config.json?' + Date.now()).then(r => r.json());
+    if (cfg.maintenance) {
+      document.body.innerHTML = `
+        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:40px;text-align:center;font-family:'Inter',sans-serif;background:#faf8f5;color:#333;">
+          <div style="font-size:4rem;margin-bottom:16px;">🔧</div>
+          <h1 style="font-family:'Playfair Display',serif;font-size:2rem;margin-bottom:12px;">Maintenance Mode</h1>
+          <p style="max-width:420px;color:#666;line-height:1.6;">${cfg.message || 'Site is temporarily down for maintenance. Check back soon!'}</p>
+          <p style="margin-top:24px;font-size:0.85rem;color:#999;">ES117 — IIT Gandhinagar</p>
+        </div>`;
+      return; // Stop all initialization
+    }
+  } catch { /* config not found = site is live */ }
+
   initDarkMode();
   initEasterEggs();
   initAuthUI();  // runs async in background, doesn't block page
