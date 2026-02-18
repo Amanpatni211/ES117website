@@ -35,7 +35,7 @@ async function apiFetch(endpoint, options = {}) {
     const token = getToken();
     if (token) headers['Authorization'] = `Bearer ${token}`;
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 4000);
+    const timeout = setTimeout(() => controller.abort(), 2000);
     const res = await fetch(`${API_BASE}${endpoint}`, {
       ...options, headers, signal: controller.signal
     });
@@ -770,7 +770,6 @@ async function initAuthUI() {
 // ============================================================
 async function initHomePage() {
   const teams = await loadTeams();
-  const upvoteCounts = await apiFetch('/api/upvotes/all') || {};
 
   const statsEl = document.getElementById('stats');
   if (statsEl) statsEl.innerHTML = renderStats(teams);
@@ -779,23 +778,46 @@ async function initHomePage() {
   if (phaseEl) phaseEl.innerHTML = renderPhaseTimeline(1);
 
   const gridEl = document.getElementById('teams-grid');
-  if (gridEl) gridEl.innerHTML = teams.map((t, i) => renderTeamCard(t, i, upvoteCounts)).join('');
+  // Render immediately with no upvote counts (fast!)
+  if (gridEl) gridEl.innerHTML = teams.map((t, i) => renderTeamCard(t, i, {})).join('');
 
   const countEl = document.getElementById('team-count');
   if (countEl) countEl.textContent = teams.length;
+
+  // Engagement features (non-blocking)
+  renderRandomQuote();
+  renderCountdown();
+
+  // Load upvote counts in background, then patch cards
+  apiFetch('/api/upvotes/all').then(upvoteCounts => {
+    if (!upvoteCounts || !gridEl) return;
+    // Patch fire badges onto existing cards
+    for (const [teamId, data] of Object.entries(upvoteCounts)) {
+      if (data.count > 0) {
+        const cards = gridEl.querySelectorAll('.team-card__title');
+        cards.forEach(title => {
+          const card = title.closest('.team-card');
+          if (card && card.getAttribute('onclick')?.includes(teamId)) {
+            if (!title.querySelector('.team-card__fire')) {
+              title.insertAdjacentHTML('beforeend',
+                `<span class="team-card__fire">🔥 ${data.count}</span>`);
+            }
+          }
+        });
+      }
+    }
+  });
+
+  // Load polls in background
+  renderPolls();
 
   document.querySelectorAll('.filter-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('filter-btn--active'));
       btn.classList.add('filter-btn--active');
-      gridEl.innerHTML = filterTeams(teams, btn.dataset.filter).map((t, i) => renderTeamCard(t, i, upvoteCounts)).join('');
+      gridEl.innerHTML = filterTeams(teams, btn.dataset.filter).map((t, i) => renderTeamCard(t, i, {})).join('');
     });
   });
-
-  // Engagement features
-  renderRandomQuote();
-  renderCountdown();
-  renderPolls();
 }
 
 async function initTeamPage() {
@@ -824,5 +846,5 @@ async function initTeamPage() {
 document.addEventListener('DOMContentLoaded', () => {
   initDarkMode();
   initEasterEggs();
-  initAuthUI();
+  initAuthUI();  // runs async in background, doesn't block page
 });
