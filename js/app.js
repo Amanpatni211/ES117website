@@ -35,13 +35,14 @@ async function apiFetch(endpoint, options = {}) {
     const token = getToken();
     if (token) headers['Authorization'] = `Bearer ${token}`;
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 2000);
+    const ms = options._timeout || 2000;
+    const timeout = setTimeout(() => controller.abort(), ms);
     const res = await fetch(`${API_BASE}${endpoint}`, {
       ...options, headers, signal: controller.signal
     });
     clearTimeout(timeout);
     if (!res.ok) {
-      if (res.status === 401) clearToken();
+      if (res.status === 401) return '__401__';
       return null;
     }
     return await res.json();
@@ -741,9 +742,9 @@ async function initAuthUI() {
 
   const token = getToken();
   if (token) {
-    // Show user info
-    const user = await apiFetch('/api/auth/me');
-    if (user) {
+    // Longer timeout for auth check — this is important for UX
+    const user = await apiFetch('/api/auth/me', { _timeout: 5000 });
+    if (user && user !== '__401__') {
       const li = document.createElement('li');
       li.innerHTML = `
               <span class="nav__user">
@@ -755,9 +756,10 @@ async function initAuthUI() {
         clearToken();
         window.location.reload();
       });
-    } else {
-      clearToken(); // Token expired
+    } else if (user === '__401__') {
+      clearToken(); // Only clear on actual 401, not timeout
     }
+    // If null (timeout), keep token — don't log user out
   } else {
     const li = document.createElement('li');
     li.innerHTML = `<a href="${API_BASE}/api/auth/login?redirect=${encodeURIComponent(window.location.href)}" class="nav__link nav__login-btn">Login 🔐</a>`;
