@@ -1610,3 +1610,307 @@ h3 {
   background: var(--terracotta-dark);
   transform: translateY(-1px);
 }
+
+/* ========== LOGIN PROMPT MODAL ========== */
+.login-prompt {
+  position: fixed;
+  inset: 0;
+  z-index: 20000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  animation: fadeIn 0.2s ease;
+}
+
+.login-prompt__card {
+  background: var(--warm-white);
+  border-radius: var(--radius-lg);
+  padding: 40px 36px;
+  max-width: 380px;
+  width: 90%;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+  animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.login-prompt__icon {
+  font-size: 2.5rem;
+  margin-bottom: 12px;
+}
+
+.login-prompt__title {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.3rem;
+  color: var(--charcoal);
+  margin-bottom: 8px;
+}
+
+.login-prompt__desc {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  margin-bottom: 24px;
+}
+
+.login-prompt__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.login-prompt__btn {
+  padding: 12px 24px;
+  border-radius: var(--radius-full);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: all var(--transition);
+  text-decoration: none;
+  text-align: center;
+}
+
+.login-prompt__btn--primary {
+  background: var(--terracotta);
+  color: white;
+}
+
+.login-prompt__btn--primary:hover {
+  background: var(--terracotta-dark);
+  transform: translateY(-1px);
+}
+
+.login-prompt__btn--cancel {
+  background: transparent;
+  color: var(--text-secondary);
+}
+
+.login-prompt__btn--cancel:hover {
+  color: var(--charcoal);
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* ========== FIRE UPVOTE BUTTON ========== */
+.upvote-section {
+  margin: 36px 0;
+  text-align: center;
+}
+
+.upvote-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 32px;
+  border: 2px solid var(--border-hairline);
+  border-radius: var(--radius-full);
+  background: var(--warm-white);
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-size: 1rem;
+}
+
+.upvote-btn:hover {
+  border-color: var(--terracotta);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(193, 108, 75, 0.15);
+}
+
+.upvote-btn--active {
+  background: linear-gradient(135deg, #ff6b35, #e84118);
+  border-color: transparent;
+  color: white;
+}
+
+.upvote-btn--active:hover {
+  box-shadow: 0 8px 24px rgba(232, 65, 24, 0.3);
+}
+
+.upvote-btn__icon {
+  font-size: 1.3rem;
+  transition: transform 0.3s ease;
+}
+
+.upvote-btn:hover .upvote-btn__icon {
+  transform: scale(1.2);
+}
+
+.upvote-btn__count {
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.upvote-btn__label {
+  font-size: 0.85rem;
+  opacity: 0.8;
+}
+
+/* Fire count on team cards */
+.team-card__fire {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--terracotta);
+  background: var(--terracotta-light);
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  vertical-align: middle;
+  margin-left: 6px;
+}
+
+/* ========== COMMENTS SECTION ========== */
+.comments-section {
+  margin-top: 40px;
+  padding-top: 32px;
+  border-top: 1px solid var(--border-hairline);
+}
+
+.comments-section__title {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.2rem;
+  margin-bottom: 20px;
+}
+
+.comments-section__count {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  font-family: 'Inter', sans-serif;
+  font-weight: 400;
+}
+
+.comment-form {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 24px;
+  align-items: flex-start;
+}
+
+.comment-form__input {
+  flex: 1;
+  padding: 12px 16px;
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-md);
+  font-family: 'Inter', sans-serif;
+  font-size: 0.9rem;
+  resize: vertical;
+  min-height: 44px;
+  background: var(--warm-white);
+  color: var(--charcoal);
+  transition: border-color var(--transition);
+}
+
+.comment-form__input:focus {
+  outline: none;
+  border-color: var(--terracotta);
+}
+
+.comment-form__btn {
+  padding: 12px 20px;
+  background: var(--terracotta);
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition);
+  white-space: nowrap;
+}
+
+.comment-form__btn:hover {
+  background: var(--terracotta-dark);
+  transform: translateY(-1px);
+}
+
+.comment-login-btn {
+  width: 100%;
+  padding: 14px;
+  border: 2px dashed var(--border-hairline);
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all var(--transition);
+  margin-bottom: 24px;
+}
+
+.comment-login-btn:hover {
+  border-color: var(--terracotta);
+  color: var(--terracotta);
+}
+
+.comments-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.comment-card {
+  padding: 16px;
+  background: var(--warm-white);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-md);
+}
+
+.comment-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.comment-card__author {
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--terracotta);
+}
+
+.comment-card__time {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.comment-card__text {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.comments-empty {
+  text-align: center;
+  color: var(--text-muted);
+  font-style: italic;
+  padding: 20px 0;
+}
+
+/* Dark mode overrides for new components */
+html[data-theme="dark"] .login-prompt__card,
+html[data-theme="dark"] .comment-card,
+html[data-theme="dark"] .upvote-btn:not(.upvote-btn--active) {
+  background: var(--charcoal);
+  border-color: var(--border-hairline);
+}
+
+html[data-theme="dark"] .login-prompt__title,
+html[data-theme="dark"] .comments-section__title {
+  color: var(--warm-white);
+}
+
+html[data-theme="dark"] .comment-form__input {
+  background: var(--charcoal);
+  color: var(--warm-white);
+  border-color: var(--border-hairline);
+}

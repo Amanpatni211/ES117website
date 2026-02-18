@@ -116,10 +116,12 @@ function getQueryParam(key) {
 }
 
 // --- Rendering: Team Card ---
-function renderTeamCard(team, index) {
+function renderTeamCard(team, index, upvoteCounts = {}) {
   const num = String(index + 1).padStart(2, '0');
   const phase = PHASE_NAMES[team.currentPhase - 1] || 'Ideation';
   const initials = getInitials(team.captain);
+  const fireCount = upvoteCounts[team.id]?.count || 0;
+  const fireHtml = fireCount > 0 ? `<span class="team-card__fire">🔥 ${fireCount}</span>` : '';
 
   return `
     <article class="team-card animate-in" onclick="navigateToTeam('${team.id}')">
@@ -127,7 +129,7 @@ function renderTeamCard(team, index) {
       <div class="team-card__body">
         <div class="team-card__header">
           <div class="team-card__number">${num}</div>
-          <h3 class="team-card__title">${escapeHtml(team.name)}</h3>
+          <h3 class="team-card__title">${escapeHtml(team.name)} ${fireHtml}</h3>
         </div>
         <p class="team-card__description">${escapeHtml(team.description)}</p>
       </div>
@@ -251,6 +253,9 @@ function renderTeamDetail(team, updates = []) {
       </div>
 
       ${timelineHtml}
+
+      <div id="upvote-container" data-team="${team.id}"></div>
+      <div id="comments-container" data-team="${team.id}"></div>
     </div>`;
 }
 
@@ -473,6 +478,141 @@ function showToast(msg) {
 }
 
 // ============================================================
+// FEATURE: Login Prompt Popup
+// ============================================================
+function showLoginPrompt(action = 'participate') {
+  const existing = document.getElementById('login-prompt');
+  if (existing) existing.remove();
+
+  const overlay = document.createElement('div');
+  overlay.id = 'login-prompt';
+  overlay.className = 'login-prompt';
+  overlay.innerHTML = `
+    <div class="login-prompt__card">
+      <div class="login-prompt__icon">🔐</div>
+      <h3 class="login-prompt__title">Sign in to ${action}</h3>
+      <p class="login-prompt__desc">Use your <strong>@iitgn.ac.in</strong> Google account</p>
+      <div class="login-prompt__actions">
+        <a href="${API_BASE}/api/auth/login?redirect=${encodeURIComponent(window.location.href)}"
+           class="login-prompt__btn login-prompt__btn--primary">Sign in with Google</a>
+        <button class="login-prompt__btn login-prompt__btn--cancel" onclick="document.getElementById('login-prompt').remove()">Cancel</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e => {
+    if (e.target === overlay) overlay.remove();
+  });
+}
+
+// ============================================================
+// FEATURE: Fire Upvotes
+// ============================================================
+async function renderUpvoteButton(teamId) {
+  const container = document.getElementById('upvote-container');
+  if (!container) return;
+
+  const data = await apiFetch(`/api/teams/${teamId}/upvotes`);
+  const count = data?.count || 0;
+  const voted = data?.user_has_upvoted || false;
+  const cls = voted ? 'upvote-btn upvote-btn--active' : 'upvote-btn';
+
+  container.innerHTML = `
+    <div class="upvote-section animate-in">
+      <button class="${cls}" id="upvote-btn" title="Show some love!">
+        <span class="upvote-btn__icon">🔥</span>
+        <span class="upvote-btn__count">${count}</span>
+        <span class="upvote-btn__label">${voted ? 'You fired this!' : 'Fire this team!'}</span>
+      </button>
+    </div>`;
+
+  document.getElementById('upvote-btn')?.addEventListener('click', async () => {
+    if (!getToken()) {
+      showLoginPrompt('upvote this team');
+      return;
+    }
+    const result = await apiFetch(`/api/teams/${teamId}/upvotes`, { method: 'POST' });
+    if (result) {
+      renderUpvoteButton(teamId); // Re-render with new state
+      if (result.user_has_upvoted) {
+        showToast('🔥 Fired!');
+      }
+    }
+  });
+}
+
+// ============================================================
+// FEATURE: Team Comments
+// ============================================================
+function timeAgo(dateStr) {
+  const now = new Date();
+  const d = new Date(dateStr + 'Z');
+  const secs = Math.floor((now - d) / 1000);
+  if (secs < 60) return 'just now';
+  if (secs < 3600) return `${Math.floor(secs / 60)}m ago`;
+  if (secs < 86400) return `${Math.floor(secs / 3600)}h ago`;
+  return `${Math.floor(secs / 86400)}d ago`;
+}
+
+async function renderComments(teamId) {
+  const container = document.getElementById('comments-container');
+  if (!container) return;
+
+  const comments = await apiFetch(`/api/teams/${teamId}/comments`) || [];
+  const token = getToken();
+
+  const formHtml = token ? `
+    <form id="comment-form" class="comment-form">
+      <textarea id="comment-input" class="comment-form__input" placeholder="Leave a comment..." maxlength="1000" rows="2"></textarea>
+      <button type="submit" class="comment-form__btn">Post</button>
+    </form>` : `
+    <button class="comment-login-btn" id="comment-login-btn">Sign in to comment 💬</button>`;
+
+  const commentsHtml = comments.length > 0
+    ? comments.map(c => `
+        <div class="comment-card animate-in">
+          <div class="comment-card__header">
+            <span class="comment-card__author">${escapeHtml(c.author_name.split(' ')[0])}</span>
+            <span class="comment-card__time">${timeAgo(c.created_at)}</span>
+          </div>
+          <p class="comment-card__text">${escapeHtml(c.text)}</p>
+        </div>`).join('')
+    : '<p class="comments-empty">No comments yet. Be the first!</p>';
+
+  container.innerHTML = `
+    <div class="comments-section animate-in">
+      <h3 class="comments-section__title">💬 Comments <span class="comments-section__count">${comments.length}</span></h3>
+      ${formHtml}
+      <div class="comments-list" id="comments-list">${commentsHtml}</div>
+    </div>`;
+
+  // Form submit
+  const form = document.getElementById('comment-form');
+  if (form) {
+    form.addEventListener('submit', async e => {
+      e.preventDefault();
+      const input = document.getElementById('comment-input');
+      const text = input.value.trim();
+      if (!text) return;
+      const result = await apiFetch(`/api/teams/${teamId}/comments`, {
+        method: 'POST',
+        body: JSON.stringify({ text })
+      });
+      if (result) {
+        showToast('Comment posted! 💬');
+        renderComments(teamId); // Refresh
+      } else {
+        showToast('Failed to post — try again');
+      }
+    });
+  }
+
+  // Login button
+  document.getElementById('comment-login-btn')?.addEventListener('click', () => {
+    showLoginPrompt('leave a comment');
+  });
+}
+
+
 // FEATURE: Shoutout Wall
 // ============================================================
 function renderShoutoutCard(shout, index) {
@@ -630,6 +770,7 @@ async function initAuthUI() {
 // ============================================================
 async function initHomePage() {
   const teams = await loadTeams();
+  const upvoteCounts = await apiFetch('/api/upvotes/all') || {};
 
   const statsEl = document.getElementById('stats');
   if (statsEl) statsEl.innerHTML = renderStats(teams);
@@ -638,7 +779,7 @@ async function initHomePage() {
   if (phaseEl) phaseEl.innerHTML = renderPhaseTimeline(1);
 
   const gridEl = document.getElementById('teams-grid');
-  if (gridEl) gridEl.innerHTML = teams.map((t, i) => renderTeamCard(t, i)).join('');
+  if (gridEl) gridEl.innerHTML = teams.map((t, i) => renderTeamCard(t, i, upvoteCounts)).join('');
 
   const countEl = document.getElementById('team-count');
   if (countEl) countEl.textContent = teams.length;
@@ -647,7 +788,7 @@ async function initHomePage() {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('filter-btn--active'));
       btn.classList.add('filter-btn--active');
-      gridEl.innerHTML = filterTeams(teams, btn.dataset.filter).map((t, i) => renderTeamCard(t, i)).join('');
+      gridEl.innerHTML = filterTeams(teams, btn.dataset.filter).map((t, i) => renderTeamCard(t, i, upvoteCounts)).join('');
     });
   });
 
@@ -673,6 +814,10 @@ async function initTeamPage() {
   const updates = await loadAllUpdates();
   content.innerHTML = renderTeamDetail(team, updates);
   document.title = `${team.name} — ES117`;
+
+  // Load interactive features
+  renderUpvoteButton(team.id);
+  renderComments(team.id);
 }
 
 // --- Global Init (runs on all pages) ---
