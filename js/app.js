@@ -5,8 +5,8 @@ const PHASE_ICONS = ['💡', '🔬', '🔧', '🎤'];
 const DEMO_DAY = new Date('2026-04-15T10:00:00+05:30');
 
 // --- API Configuration ---
-// Change this to your server address once you know the reachable URL
-const API_BASE = localStorage.getItem('es117-api') || '';
+// Static ngrok domain for backend. Override via localStorage if needed.
+const API_BASE = localStorage.getItem('es117-api') || 'https://superindifferent-renae-unjoyfully.ngrok-free.dev';
 
 // --- Auth Token Management ---
 function getToken() { return localStorage.getItem('es117-token'); }
@@ -31,7 +31,7 @@ function clearToken() { localStorage.removeItem('es117-token'); }
 async function apiFetch(endpoint, options = {}) {
   if (!API_BASE) return null;
   try {
-    const headers = { 'Content-Type': 'application/json', ...options.headers };
+    const headers = { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': '1', ...options.headers };
     const token = getToken();
     if (token) headers['Authorization'] = `Bearer ${token}`;
     const controller = new AbortController();
